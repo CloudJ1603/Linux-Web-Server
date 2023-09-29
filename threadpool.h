@@ -10,6 +10,7 @@
 
 /*
     class template
+    T - the template parameter, which defines the type of mission
 */ 
 template<typename T>
 class threadpool
@@ -49,7 +50,7 @@ private:
 template<typename T>
 threadpool<T>::threadpool(int thread_number, int max_request) : 
 m_thread_number(thread_number), m_max_requests(max_request), 
-m_stop(false), m_thread(NULL)
+m_stop(false), m_threads(NULL)
 {
     if(thread_number <=0 || max_request <= 0)
     {
@@ -73,7 +74,7 @@ m_stop(false), m_thread(NULL)
             throw std::exception();
         }
 
-        if(pthread_detach(,_thread[i]))
+        if(pthread_detach(m_thread[i]))
         {
             delete[] m_threads;
             throw std::exception();
