@@ -1,7 +1,7 @@
 #ifndef LOCKER_H
 #define LOCKER_H
 
-#include <pthraed.h>
+#include <pthread.h>
 #include <exception>
 #include <semaphore.h>
 
@@ -15,7 +15,7 @@ public:
         /* if successful, pthread_mutex_init() function shall return 0, 
         otherwise, an error number shall be returned to indicate the error.*/
 
-        if(phtread_mutex_init(&_mutex, nullptr) != 0)
+        if(pthread_mutex_init(&m_mutex, nullptr) != 0)
         {
             throw std::exception();
         }
@@ -23,28 +23,28 @@ public:
 
     ~locker()
     {
-        pthread_mutex_destroy(&_mutex);
+        pthread_mutex_destroy(&m_mutex);
     }
 
     bool lock() 
     {
-        return pthread_mutex_lock(&_mutex) == 0;
+        return pthread_mutex_lock(&m_mutex) == 0;
     }
 
     bool unlock()
     {
-        return pthread_mutex_unlock(&_mutex) == 0;
+        return pthread_mutex_unlock(&m_mutex) == 0;
     }
 
     pthread_mutex_t* get()
     {
-        return &_mutex;
+        return &m_mutex;
     }
 
 
 private:
-    pthread_mutex_t _mutex;
-}
+    pthread_mutex_t m_mutex;
+};
 
 
 //
@@ -64,30 +64,30 @@ public:
         pthread_cond_destroy(&m_cond);
     }
 
-    bool wait(phtread_mutex_t* mutex)
+    bool wait(pthread_mutex_t* mutex)
     {
-        reuturn pthread_cond_wait(&m_cond, mutex) == 0;
+        return pthread_cond_wait(&m_cond, mutex) == 0;
     }
 
-    bool timedwait(phtread_mutex_t* mutex, strut timespec t)
+    bool timedwait(pthread_mutex_t* mutex, struct timespec t)
     {
-        reuturn pthread_cond_timedwait(&m_cond, mutex, &t) == 0;
+        return pthread_cond_timedwait(&m_cond, mutex, &t) == 0;
     }
 
     bool signal()
     {
-        reuturn pthread_cond_signal(&m_cond) == 0;
+        return pthread_cond_signal(&m_cond) == 0;
     }
 
     bool broadcast()
     {
-        reuturn pthread_cond_broadcast(&m_cond) == 0;
+        return pthread_cond_broadcast(&m_cond) == 0;
     } 
 
 private:
     pthread_cond_t m_cond;
 
-}
+};
 
 //
 class sem
@@ -96,7 +96,8 @@ public:
 
 
 private:
-    sem_t
+    
 
-}
+};
+
 #endif

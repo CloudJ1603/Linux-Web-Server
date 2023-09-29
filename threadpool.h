@@ -10,8 +10,6 @@
 
 /*
     class template
-
-
 */ 
 template<typename T>
 class threadpool
@@ -42,6 +40,11 @@ private:
     bool m_stop;     // a stop flag
 
 };
+
+/* 
+    Define member functions of a class template 
+    [className]<[template parameter]>[member function name](function paremeter)
+*/
 
 template<typename T>
 threadpool<T>::threadpool(int thread_number, int max_request) : 
