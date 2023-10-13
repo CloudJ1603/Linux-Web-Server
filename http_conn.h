@@ -30,7 +30,9 @@ public:
     void process();  // process request from client end
     
     void init(int sockfd, const sockaddr_int& addr);  // initialize new connection
-    void close_conn();
+    void close_conn();   // close connection
+    bool read();   // read in non-blocking mode
+    bool write();  // write in non-blocking mode
 
 private:
     int m_sockfd;            // the socket connected with this HTTP

@@ -1,5 +1,8 @@
 #include "http_conn.h"
 
+static int http_conn::m_epollfd = -1;      // events from all sockets are registered to the same epoll object
+static int http_conn::m_user_count = 0;    // number of users
+
 // set FD as non-blocking
 int setnonblocking(int fd) 
 {
@@ -67,4 +70,23 @@ void http_conn::close_conn() {
         m_sockfd = -1;
         m_user_count--;
     }
+}
+
+// read in non-blocking mode
+bool http_conn::read() {
+    printf("read all data at once\n");
+    return true;
+}
+
+// write in non-blocking mode
+bool http_conn::write() {
+    printf("write all data at once\n");
+    return true;
+}
+
+// used by worker thread in the threadpool, to handle http request
+void http_conn::process() {
+    // parse http request
+    printf("parse request, create response\n");
+    // create response
 }

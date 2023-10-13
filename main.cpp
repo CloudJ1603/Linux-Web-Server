@@ -35,8 +35,7 @@ extern void removefd(int epollfd, int fd);
 extern void modfd(int epollfd, int fd, int ev);
 
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
     if(argc <= 1) {
         printf("User Input should adhere to the following format: %s port_number\n", basename(argv[0]));
         exit(-1);
@@ -136,10 +135,18 @@ int main(int argc, char* argv[])
                 }
             } else if(events[i].events & EPOLLOUT) {
                 // write all the user data at once
-                if( !users[sockfd].write() ) 
+                if( !users[sockfd].write() ) {   // if fail to write, close connection
+                    users[sockfd].close_conn();
+                }
             }
         }
     }
+
+    close(epollfd);
+    close(listenfd);
+    delete [] users;
+    delete pool;
+    
 
 
 
