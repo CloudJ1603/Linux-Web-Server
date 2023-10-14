@@ -7,6 +7,8 @@
 #include <exception>
 #include <cstdio>
 
+#include <sys/epoll.h>
+
 
 /*
     class template
