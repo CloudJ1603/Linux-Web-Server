@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
-    bind(listenfd, (struct sockaddr*)&address. sizeof(address));
+    bind(listenfd, (struct sockaddr*)&address, sizeof(address));
 
     // listen
     listen(listenfd, 5);

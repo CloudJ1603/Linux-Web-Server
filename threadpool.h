@@ -3,7 +3,7 @@
 
 #include <pthread.h>
 #include <list>
-#include <locker.h>
+#include "locker.h"
 #include <exception>
 #include <cstdio>
 
@@ -96,14 +96,13 @@ template<typename T>
 bool threadpool<T>::append(T* request)
 {
     m_queuelocker.lock();
-    if(m_workqueue.size() > m_max_requests)
-    {
-        m_max_request.unlock();
+    if(m_workqueue.size() > m_max_requests) {
+        m_queuelocker.unlock();
         return false;
     }
 
     m_workqueue.push_back(request);
-    m_queuelcoker.unlock();
+    m_queuelocker.unlock();
     m_queuestat.post();
     return true;
 }
@@ -111,7 +110,7 @@ bool threadpool<T>::append(T* request)
 template<typename T>
 void* threadpool<T>::worker(void* arg)
 {
-    threapool* pool = (threadpool*) arg;
+    threadpool* pool = (threadpool*) arg;
     pool->run();
     return pool;
 }
@@ -137,7 +136,7 @@ void threadpool<T>::run()
             continue;
         }
 
-        reqeust->process();
+        request->process();
     }
 }
 
