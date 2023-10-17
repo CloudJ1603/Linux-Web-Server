@@ -68,9 +68,6 @@ public:
     bool read();   // read in non-blocking mode
     bool write();  // write in non-blocking mode
     void process();  // process request from client end
-    
-
-
 
 private:
     int m_sockfd;            // the socket connected with this HTTP
@@ -97,8 +94,6 @@ private:
     // do_request
     char m_real_file[FILENAME_LEN];     // the complete path of the file requested by the client
 
-             
-
     // ---------------------------- write related variables ------------------------------
     char m_write_buf[ WRITE_BUFFER_SIZE ];  // write buffer
     int m_write_index;                        // the number of bytes need to write in the buffer
@@ -114,15 +109,8 @@ private:
     struct iovec m_iv[2];                   
     int m_iv_count;                        // the number of memory block being written
 
-
-
-
-
     void init();      // 初始化连接
     
-     
-
-
     HTTP_CODE process_read();    // parse http request - the main state machine
     // The following functions are called by process_read() to parse HTTP request      
     HTTP_CODE parse_request_line( char* text );

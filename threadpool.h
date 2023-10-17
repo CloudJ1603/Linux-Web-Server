@@ -1,6 +1,7 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
+#include <memory>
 #include <pthread.h>
 #include <list>
 #include "locker.h"
@@ -30,7 +31,8 @@ private:
 
     int m_thread_number;      // number of threads in the queue
 
-    pthread_t* m_threads;  // an array of threads of size n_thread_number  
+    // pthread_t* m_threads;  // an array of threads of size n_thread_number  
+    std::unique_ptr<pthread_t[]> m_threads; 
 
     int m_max_requests;    // max number of requests in the queue
 
@@ -59,7 +61,8 @@ m_stop(false), m_threads(NULL)
         throw std::exception();
     }
 
-    m_threads = new pthread_t[m_thread_number];
+    // m_threads = new pthread_t[m_thread_number]; --> change to unique pointer
+    m_threads = std::make_unique<pthread_t[]>(m_thread_number);
 
     if(!m_threads)
     {
@@ -70,15 +73,17 @@ m_stop(false), m_threads(NULL)
     for(int i = 0; i < thread_number; i++)
     {
         printf("create the %dth thread\n", i);
-        if( pthread_create(m_threads + i, NULL, worker, this) != 0 )
+        if( pthread_create(m_threads.get() + i, NULL, worker, this) != 0 )
         {
-            delete[] m_threads;
+            // delete[] m_threads;
+            m_threads.reset();
             throw std::exception();
         }
 
-        if(pthread_detach(m_threads[i]))
+        if(pthread_detach((m_threads.get())[i]))
         {
-            delete[] m_threads;
+            // delete[] m_threads;
+            m_threads.reset();
             throw std::exception();
         }
         
@@ -88,7 +93,7 @@ m_stop(false), m_threads(NULL)
 template<typename T>
 threadpool<T>::~threadpool()
 {
-    delete[] m_threads;
+    // delete[] m_threads;
     m_stop = true;
 }
 

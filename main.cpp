@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <sys/epoll.h>
 #include <signal.h>
-
+#include <memory>
 #include "locker.h"
 #include "threadpool.h"
 #include "http_conn.h"
@@ -58,15 +58,18 @@ int main(int argc, char* argv[]) {
     addsig(SIGPIPE, SIG_IGN);
 
     // create and initialize threadpool 
-    threadpool<http_conn>* pool = NULL;
+    // threadpool<http_conn>* pool = NULL;
+    std::unique_ptr<threadpool<http_conn>> pool;
     try {
-        pool = new threadpool<http_conn>;
+        // pool = new threadpool<http_conn>;  --> change to smart pointer
+        pool = std::make_unique<threadpool<http_conn>>(); 
     } catch (...) {
         exit(-1);
     }
 
     // create an array for 
-    http_conn* users = new http_conn[MAX_FD];
+    // http_conn* users = new http_conn[MAX_FD];  --> change to smart pointer
+    auto users = std::make_unique<http_conn[]>(MAX_FD);
 
     // create the socket for listening
     int listenfd = socket(PF_INET, SOCK_STREAM, 0);
@@ -129,7 +132,7 @@ int main(int argc, char* argv[]) {
             } else if(events[i].events & EPOLLIN) {
                 // read all the user data at once
                 if(users[sockfd].read()) {
-                    pool->append(users + sockfd);
+                    pool->append(users.get() + sockfd);
                 } else {
                     users[sockfd].close_conn();
                 }
@@ -144,8 +147,8 @@ int main(int argc, char* argv[]) {
 
     close(epollfd);
     close(listenfd);
-    delete [] users;
-    delete pool;
+    // delete [] users;
+    // delete pool;
     
 
 
