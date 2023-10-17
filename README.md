@@ -1,5 +1,46 @@
 # Linux Web Server
 
+
+
+## Pressure Test
+
+```bash
+./webbench -c 100 -t 10 http://192.168.87.128:9999/index.html
+Webbench - Simple Web Benchmark 1.5
+Copyright (c) Radim Kolar 1997-2004, GPL Open Source Software.
+
+Benchmarking: GET http://192.168.87.128:9999/index.html
+100 clients, running 10 sec.
+
+Speed=970530 pages/min, 2571904 bytes/sec.
+Requests: 161755 susceed, 0 failed.
+
+./webbench -c 1000 -t 10 http://192.168.87.128:9999/index.html
+Webbench - Simple Web Benchmark 1.5
+Copyright (c) Radim Kolar 1997-2004, GPL Open Source Software.
+
+Benchmarking: GET http://192.168.87.128:9999/index.html
+1000 clients, running 10 sec.
+
+Speed=991344 pages/min, 2626998 bytes/sec.
+Requests: 165224 susceed, 0 failed.
+
+./webbench -c 5000 -t 10 http://192.168.87.128:9999/index.html
+Webbench - Simple Web Benchmark 1.5
+Copyright (c) Radim Kolar 1997-2004, GPL Open Source Software.
+
+Benchmarking: GET http://192.168.87.128:9999/index.html
+5000 clients, running 10 sec.
+
+Speed=1070370 pages/min, 2836258 bytes/sec.
+Requests: 178395 susceed, 0 failed.
+
+```
+
+## TODO
+
+
+
 ## Dependencies for Running Locally
 * cmake >= 3.7
   * All OSes: [click here for installation instructions](https://cmake.org/install/)
@@ -17,20 +58,5 @@
 
 ## Basic Build Instructions
 
-1. Clone this repo.
-2. Make a build directory in the top level directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./SnakeGame`.
-5. After the prompt is displayed, enter "Y" or "y" to play against a robot, or enter "N" or "n" to play in solo mode.
 
-## Rubrics Completed
-| Rubric | file | line# |
-|----------|----------|----------|
-|  The project accepts user input and processes the input.  |  main.cpp   | 15 |
-|  Class constructors utilize member initialization lists  |   snake.h  |   65  |
-| Overloaded functions allow the same function to operate on different parameters.| renderer.h | 15 |
-| Classes follow an appropriate inheritance hierarchy.| snake.h | 62 |
-|Classes use appropriate access specifiers for class members.| snake.h| 62|
-|The project makes use of references in function declarations.|renderer.h|30|
-|The project uses smart pointers instead of raw pointers.|game.h|22|
-|The project uses multithreading.|game.cpp|20|
+
