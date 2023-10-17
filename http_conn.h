@@ -8,6 +8,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <fcntl.h>
+#include <string.h>
 //#include <sys/socket.h>
 //#include <netinet/in.h>
 #include <arpa/inet.h>
@@ -84,6 +85,15 @@ private:
     int m_checked_index;   // the position of the byte being parsed currently
     int m_start_line;     // the starting position of the line being parsed currently
     
+    // HTTP request line
+    char* m_url;        // requested resource path
+    char* m_version;    // HTTP version
+    METHOD m_method;    // HTTP method
+
+    char* m_host;    // the target host and the port where the request is being sent
+    bool m_linger;   // it suggests whether the client would like to keep the connection open for potential further request
+
+
     CHECK_STATE m_check_state;  // the current state of the main state machine
 
 

@@ -73,10 +73,22 @@ void http_conn::init(int sockfd, const sockaddr_in& addr) {
 }
 
 void http_conn::init() {
-    m_check_state = http_conn::CHECK_STATE_REQUESTLINE;   // initialize the state of the main state machine 
+    // initialize the state of the main state machine 
+    m_check_state = http_conn::CHECK_STATE_REQUESTLINE;  
+    
+    // initialize the some indices for different positions in the read buffer
     m_checked_index = 0;
     m_start_line = 0;
     m_read_index = 0;
+
+    // initialize the HTTP Request Line data
+    m_method = GET;
+    m_url = 0;
+    m_version = 0;
+    m_linger = false;
+
+    // set 'READ_BUFFER_SIZE' bytes of 'm_read_buf' to 0
+    bzero(m_read_buf, READ_BUFFER_SIZE);
 }
 
 // close the connection
@@ -143,7 +155,7 @@ HTTP_CODE http_conn::process_read() {
     */
     while (((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
                 || ((line_status = parse_line()) == LINE_OK)) {
-        // 获取一行数据
+        // fetch one line from HTTP request message
         text = get_line();
         m_start_line = m_checked_index;
         printf( "got 1 http line: %s\n", text );
@@ -180,10 +192,78 @@ HTTP_CODE http_conn::process_read() {
     }
     return NO_REQUEST;
 }
+/*
+    The following function will be called by process_read() to parse HTTP request  
+    HTTP_CODE parse_request_line( char* text );
+    HTTP_CODE parse_headers( char* text );
+    HTTP_CODE parse_content( char* text );
+    HTTP_CODE do_request();
+    LINE_STATUS parse_line();
+    char* get_line() { return m_read_buf + m_start_line; }
+*/ 
 
-// The following function will be called by process_read() to parse HTTP request      
+/*
+    parse HTTP request line, fetch the following:
+        1. HTTP method
+        2. target URL
+        3. HTTP version
+*/
 HTTP_CODE http_conn::parse_request_line( char* text ) {
-    return http_conn::NO_REQUEST;
+    /*
+        GET /index.html HTTP/1.1
+        Find the first occurrence of either a space or a tab character in the string pointed by text, 
+        which points to the start of the HTTP request line. The result is stored in the 
+        'm_url' pointer, which points to the first character after the HTTP method, 
+        in this case, is the space ' ' after 'GET'
+    */ 
+    
+    m_url = strpbrk(text, " \t"); 
+    if (! m_url) { 
+        return BAD_REQUEST;
+    }
+
+    /*
+        GET\0/index.html HTTP/1.1
+        Place a null character at the position pointed to by 'm_url',
+        splitting the request line into two parts: the HTTP method, and the URL.
+        Then, increment the m_url pointer to point to the start of the URL
+    */
+
+    *m_url++ = '\0';    // place a null character, then incremt m_url
+    char* method = text;
+    if ( strcasecmp(method, "GET") == 0 ) { // compare two strings, ignoring case 
+        m_method = GET;
+    } else {
+        return BAD_REQUEST;
+    }
+
+    /*
+        /index.html HTTP/1.1
+        Find the first occurrence of either a space of a tab in the string 
+
+    */
+    // 检索字符串 str1 中第一个不在字符串 str2 中出现的字符下标。
+    m_version = strpbrk( m_url, " \t" );
+    if (!m_version) {
+        return BAD_REQUEST;
+    }
+    *m_version++ = '\0';
+    if (strcasecmp( m_version, "HTTP/1.1") != 0 ) {
+        return BAD_REQUEST;
+    }
+    /**
+     * http://192.168.110.129:10000/index.html
+    */
+    if (strncasecmp(m_url, "http://", 7) == 0 ) {   
+        m_url += 7;
+        // 在参数 str 所指向的字符串中搜索第一次出现字符 c（一个无符号字符）的位置。
+        m_url = strchr( m_url, '/' );
+    }
+    if ( !m_url || m_url[0] != '/' ) {
+        return BAD_REQUEST;
+    }
+    m_check_state = CHECK_STATE_HEADER; // 检查状态变成检查头
+    return NO_REQUEST;
 }
 
 HTTP_CODE http_conn::parse_headers( char* text ) {
@@ -200,25 +280,46 @@ HTTP_CODE http_conn::do_request() {
 
 // 
 LINE_STATUS http_conn::parse_line() {
-    return http_conn::LINE_OK;
+    char temp;
+    for ( ; m_checked_index < m_read_index; ++m_checked_index ) {
+        temp = m_read_buf[ m_checked_index ];
+        if ( temp == '\r' ) {
+            if ( ( m_checked_index + 1 ) == m_read_index ) {
+                return LINE_OPEN;
+            } else if ( m_read_buf[ m_checked_index + 1 ] == '\n' ) {
+                m_read_buf[ m_checked_index++ ] = '\0';
+                m_read_buf[ m_checked_index++ ] = '\0';
+                return LINE_OK;
+            }
+            return LINE_BAD;
+        } else if( temp == '\n' )  {
+            if( ( m_checked_index > 1) && ( m_read_buf[ m_checked_index - 1 ] == '\r' ) ) {
+                m_read_buf[ m_checked_index-1 ] = '\0';
+                m_read_buf[ m_checked_index++ ] = '\0';
+                return LINE_OK;
+            }
+            return LINE_BAD;
+        }
+    }
+    return LINE_OPEN;
 }
 
 // used by worker thread in the threadpool, to handle http request
 void http_conn::process() {
     // parse http request
-    printf("parse request, create response\n");
+    // printf("parse request, create response\n");
 
     // parse http request
-    // HTTP_CODE read_ret = process_read();
-    // if ( read_ret == NO_REQUEST ) {
-    //     modfd( m_epollfd, m_sockfd, EPOLLIN );
-    //     return;
-    // }
+    HTTP_CODE read_ret = process_read();
+    if ( read_ret == NO_REQUEST ) {
+        modfd( m_epollfd, m_sockfd, EPOLLIN );
+        return;
+    }
     
-    // // generate http response
-    // bool write_ret = process_write( read_ret );
-    // if ( !write_ret ) {
-    //     close_conn();
-    // }
-    // modfd( m_epollfd, m_sockfd, EPOLLOUT);
+    // generate http response
+    bool write_ret = process_write( read_ret );
+    if ( !write_ret ) {
+        close_conn();
+    }
+    modfd( m_epollfd, m_sockfd, EPOLLOUT);
 }
