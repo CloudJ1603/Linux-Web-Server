@@ -101,7 +101,7 @@ private:
 
     // ---------------------------- write related variables ------------------------------
     char m_write_buf[ WRITE_BUFFER_SIZE ];  // write buffer
-    int m_write_idx;                        // the number of bytes need to write in the buffer
+    int m_write_index;                        // the number of bytes need to write in the buffer
     char* m_file_address;                   // the starting point for the target file requested by the client 'mmapped' in memory
     /*
         the state of the target file. we can determine:

@@ -24,8 +24,7 @@ int http_conn::m_epollfd = -1;      // events from all sockets are registered to
 int http_conn::m_user_count = 0;    // number of users
 
 // set FD as non-blocking
-int setnonblocking(int fd) 
-{
+int setnonblocking(int fd) {
     int old_flag = fcntl(fd, F_GETFL);
     int new_flag = old_flag | O_NONBLOCK;
     fcntl(fd, F_SETFL, new_flag);
@@ -34,15 +33,11 @@ int setnonblocking(int fd)
 
 
 // add file descriptor which require listening to epoll
-void addfd(int epollfd, int fd, bool one_shot)
-{
+void addfd(int epollfd, int fd, bool one_shot) {
     epoll_event event;
     event.data.fd = fd;
     event.events = EPOLLIN | EPOLLRDHUP;
 
-    /*
-
-    */
     if(one_shot) {
         event.events | EPOLLONESHOT;
     }
@@ -65,7 +60,7 @@ void modfd(int epollfd, int fd, int ev) {
     epoll_event event;
     event.data.fd = fd;
     // event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
-    event.events = ev | EPOLLONESHOT | EPOLLRDHUP;
+    event.events = ev | EPOLLET | EPOLLONESHOT | EPOLLRDHUP;
     epoll_ctl(epollfd, EPOLL_CTL_MOD, fd, &event);
 }
 
@@ -93,12 +88,16 @@ void http_conn::init() {
     m_checked_index = 0;
     m_start_line = 0;
     m_read_index = 0;
+    m_write_index = 0;
 
     // initialize the HTTP Request Line data
     m_method = GET;
     m_url = 0;
     m_version = 0;
     m_linger = false;
+    m_content_length = 0;
+    m_host = 0;
+
 
     // set 'READ_BUFFER_SIZE' bytes of 'm_read_buf' to 0
     bzero(m_read_buf, READ_BUFFER_SIZE);
@@ -124,7 +123,7 @@ bool http_conn::write()
     // return true;
     int temp = 0;
     int bytes_have_send = 0;    
-    int bytes_to_send = m_write_idx;
+    int bytes_to_send = m_write_index;
     
     if ( bytes_to_send == 0 ) {
         /*
@@ -228,7 +227,7 @@ bool http_conn::process_write(HTTP_CODE ret) {
             add_headers(m_file_stat.st_size);
             // sets up two 'iovec' structure to send both the headers and the file content
             m_iv[ 0 ].iov_base = m_write_buf;         // header
-            m_iv[ 0 ].iov_len = m_write_idx;          // length of the header
+            m_iv[ 0 ].iov_len = m_write_index;          // length of the header
             m_iv[ 1 ].iov_base = m_file_address;      // file content
             m_iv[ 1 ].iov_len = m_file_stat.st_size;  // length of the file content
             m_iv_count = 2;
@@ -239,7 +238,7 @@ bool http_conn::process_write(HTTP_CODE ret) {
 
     // set up m_iv to contain only the header
     m_iv[ 0 ].iov_base = m_write_buf;
-    m_iv[ 0 ].iov_len = m_write_idx;
+    m_iv[ 0 ].iov_len = m_write_index;
     m_iv_count = 1;
     return true;
 }
@@ -294,7 +293,7 @@ bool http_conn::add_content( const char* content ) {
 // add a response to the server's write buffer
 bool http_conn::add_response( const char* format, ... ) {
     // ensure the current position within the write buffer does not exceed the maximum write buffer size
-    if( m_write_idx >= WRITE_BUFFER_SIZE ) {
+    if( m_write_index >= WRITE_BUFFER_SIZE ) {
         return false;
     }
     
@@ -314,11 +313,11 @@ bool http_conn::add_response( const char* format, ... ) {
     */
     va_list arg_list;                 
     va_start( arg_list, format );     
-    int len = vsnprintf( m_write_buf + m_write_idx, WRITE_BUFFER_SIZE - 1 - m_write_idx, format, arg_list );
-    if( len >= ( WRITE_BUFFER_SIZE - 1 - m_write_idx ) ) {
+    int len = vsnprintf( m_write_buf + m_write_index, WRITE_BUFFER_SIZE - 1 - m_write_index, format, arg_list );
+    if( len >= ( WRITE_BUFFER_SIZE - 1 - m_write_index ) ) {
         return false;
     }
-    m_write_idx += len;
+    m_write_index += len;
     va_end( arg_list );   // clean up the 'arg_list"
     return true;
 }
@@ -358,25 +357,19 @@ bool http_conn::read() {
         m_read_index += bytes_read;  
     }
 
-    printf("data retrived: %s\n", m_read_buf);
+    // printf("data retrived: %s\n", m_read_buf);
     return true;
 }
 
 
 // the main state machine
-HTTP_CODE http_conn::process_read() {
-
-    LINE_STATUS line_status = http_conn::LINE_OK;     // initialize the state of the side state machine
-    HTTP_CODE ret = http_conn::NO_REQUEST;            // initialize the return value
-
+http_conn::HTTP_CODE http_conn::process_read() {
+    LINE_STATUS line_status = LINE_OK;
+    HTTP_CODE ret = NO_REQUEST;
     char* text = 0;
-
-    /*
-
-    */
     while (((m_check_state == CHECK_STATE_CONTENT) && (line_status == LINE_OK))
                 || ((line_status = parse_line()) == LINE_OK)) {
-        // fetch one line from HTTP request message
+        // 获取一行数据
         text = get_line();
         m_start_line = m_checked_index;
         printf( "got 1 http line: %s\n", text );
