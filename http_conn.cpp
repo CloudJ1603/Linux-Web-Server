@@ -6,7 +6,7 @@ using CHECK_STATE = http_conn::CHECK_STATE;
 using HTTP_CODE = http_conn::HTTP_CODE;
 using LINE_STATUS = http_conn::LINE_STATUS;
 
-// 定义HTTP响应的一些状态信息
+// define some stateus message of HHTP response
 const char* ok_200_title = "OK";
 const char* error_400_title = "Bad Request";
 const char* error_400_form = "Your request has bad syntax or is inherently impossible to satisfy.\n";
@@ -470,7 +470,6 @@ HTTP_CODE http_conn::parse_request_line( char* text ) {
     */
     if (strncasecmp(m_url, "http://", 7) == 0 ) {   
         m_url += 7;
-        // 在参数 str 所指向的字符串中搜索第一次出现字符 c（一个无符号字符）的位置。
         m_url = strchr( m_url, '/' );
     }
     if ( !m_url || m_url[0] != '/' ) {
