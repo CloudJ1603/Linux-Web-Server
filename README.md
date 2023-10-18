@@ -1,6 +1,9 @@
 # Linux Web Server
 
-
+- Developed a high-performance linux web server in C++, capable of handling over ten thousand concurrent connection data exchange per second, as proven by Webbench stress testing.
+- Implemented a concurrent model incorporating a thread pool, non-blocking socket, epoll (both edge-triggered and level-triggered) and event handling (simulated proactor)
+- Implemented a state machine for parsing HTTP request message
+- Implemented a test website utilizing MySQL for user registration and login, enabling image and video file retrieval to assess server performance and data handling efficiency.
 
 ## Pressure Test
 
