@@ -39,27 +39,36 @@ Speed=1070370 pages/min, 2836258 bytes/sec.
 Requests: 178395 susceed, 0 failed.
 
 ```
+## Build and Run Instructions
+compile
+```bash
+francis@francis-VM:~/Linux-Web-Server$ g++ *.cpp -pthread
+```
+run, replace '8888' with your choice of port number
+```bash
+francis@francis-VM:~/Linux-Web-Server$ ./a.out 8888
+create the 0th thread
+create the 1th thread
+create the 2th thread
+create the 3th thread
+create the 4th thread
+create the 5th thread
+create the 6th thread
+create the 7th thread
+```
+Open any browser, enter the URL consisting of the IP address of the Linux machine, port number, and the web file. 
+For example: http://192.168.68.128:8888/index.html
+
+If you can see the welcome text together with am image, you have successfully connection to the server. 
 
 ## TODO
-
-
+- Log system
+- handle POST HTTP method
 
 ## Dependencies for Running Locally
-* cmake >= 3.7
-  * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1 (Linux, Mac), 3.81 (Windows)
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* SDL2 >= 2.0
-  * All installation instructions can be found [here](https://wiki.libsdl.org/Installation)
-  >Note that for Linux, an `apt` or `apt-get` installation is preferred to building from source. 
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools](https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
 
-## Basic Build Instructions
+
+
 
 
 
