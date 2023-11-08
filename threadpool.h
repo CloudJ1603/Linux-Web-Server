@@ -7,43 +7,28 @@
 #include "locker.h"
 #include <exception>
 #include <cstdio>
-
 #include <sys/epoll.h>
 
-
-/*
-    class template
-    T - the template parameter, which defines the type of mission
-*/ 
 template<typename T>
-class threadpool
-{
+class threadpool {
 public:
-    threadpool(int thread_number = 8, int max_request = 10000);
+    static const int DEFAULT_THREAD_NUMBER = 8;
+    static const int DEFAULT_MAX_REQUEST = 10000;
+
+    threadpool(int thread_number = DEFAULT_THREAD_NUMBER, int max_request = DEFAULT_MAX_REQUEST);
     ~threadpool();
     bool append(T* request);
-
 private:
     static void* worker(void* arg);
     void run();
 
-private:
-
-    int m_thread_number;      // number of threads in the queue
-
-    // pthread_t* m_threads;  // an array of threads of size n_thread_number  
-    std::unique_ptr<pthread_t[]> m_threads; 
-
-    int m_max_requests;    // max number of requests in the queue
-
-    std::list<T*> m_workqueue;  // request queue
-
-    locker m_queuelocker;
-
-    sem m_queuestat;    // ???????????????????
-
-    bool m_stop;     // a stop flag
-
+    int m_thread_number;                    // number of threads in the queue
+    std::unique_ptr<pthread_t[]> m_threads; // an array of threads of size n_thread_number  
+    int m_max_requests;                     // max number of requests in the queue
+    std::list<T*> m_workqueue;              // request queue
+    locker m_queuelocker;                   // mutex locker
+    sem m_queuestat;                        // semaphore status to determine if there is any request to handle
+    bool m_stop;                            // a stop flag 
 };
 
 /* 
@@ -54,52 +39,41 @@ private:
 template<typename T>
 threadpool<T>::threadpool(int thread_number, int max_request) : 
 m_thread_number(thread_number), m_max_requests(max_request), 
-m_stop(false), m_threads(NULL)
-{
-    if(thread_number <=0 || max_request <= 0)
-    {
+m_stop(false), m_threads(NULL) {
+
+    if(thread_number <=0 || max_request <= 0) {
         throw std::exception();
     }
 
     // m_threads = new pthread_t[m_thread_number]; --> change to unique pointer
     m_threads = std::make_unique<pthread_t[]>(m_thread_number);
-
-    if(!m_threads)
-    {
+    // if fail to creatge the threads array
+    if(!m_threads) {
         throw std::exception();
     }
 
-    // create (int thread_number) threads, and set them as
-    for(int i = 0; i < thread_number; i++)
-    {
+    // create "thread_number" number of threads, and detach them
+    for(int i = 0; i < thread_number; i++) {
         printf("create the %dth thread\n", i);
-        if( pthread_create(m_threads.get() + i, NULL, worker, this) != 0 )
-        {
+        if( pthread_create(m_threads.get() + i, NULL, worker, this) != 0 ) {
             // delete[] m_threads;
-            m_threads.reset();
             throw std::exception();
         }
-
-        if(pthread_detach((m_threads.get())[i]))
-        {
+        if(pthread_detach((m_threads.get())[i]) != 0) {
             // delete[] m_threads;
-            m_threads.reset();
             throw std::exception();
         }
-        
     }
 }
 
 template<typename T>
-threadpool<T>::~threadpool()
-{
+threadpool<T>::~threadpool() {
     // delete[] m_threads;
     m_stop = true;
 }
 
 template<typename T>
-bool threadpool<T>::append(T* request)
-{
+bool threadpool<T>::append(T* request) {
     m_queuelocker.lock();
     if(m_workqueue.size() > m_max_requests) {
         m_queuelocker.unlock();
@@ -113,8 +87,7 @@ bool threadpool<T>::append(T* request)
 }
 
 template<typename T>
-void* threadpool<T>::worker(void* arg)
-{
+void* threadpool<T>::worker(void* arg) {
     threadpool* pool = (threadpool*) arg;
     pool->run();
     return pool;
